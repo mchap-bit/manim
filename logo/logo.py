@@ -1,15 +1,17 @@
-from manim.manimlib.animation.creation import DrawBorderThenFill, ShowCreation, Write
-from manim.manimlib.animation.growing import GrowFromCenter
-from manim.manimlib.constants import DOWN, LEFT, TAU, WHITE
-from manim.manimlib.mobject.geometry import DashedLine, Dot
-from manim.manimlib.mobject.geometry import RegularPolygon
-from manim.manimlib.mobject.svg.tex_mobject import Tex
-from manim.manimlib.mobject.value_tracker import ValueTracker
-from manimlib.imports import *
+from manimlib.scene.scene import Scene
+from manimlib.animation.creation import DrawBorderThenFill, ShowCreation, Write
+from manimlib.animation.growing import GrowFromCenter
+from manimlib.constants import DOWN, LEFT, TAU, WHITE
+from manimlib.mobject.geometry import DashedLine, Dot
+from manimlib.mobject.geometry import RegularPolygon
+from manimlib.mobject.coordinate_systems import Axes
+from manimlib.mobject.svg.tex_mobject import Tex
+from manimlib.mobject.value_tracker import ValueTracker
+
 
 NEW_BLUE = "#68a8e1"
 
-class Thumbnail(GraphScene):
+class Thumbnail(Scene):
     CONFIG = {
         "y_max": 8,
         "y_axis_height": 5,
@@ -17,6 +19,21 @@ class Thumbnail(GraphScene):
 
     def construct(self):
         self.show_function_graph()
+
+    def setup_axes(self):
+        self.axes = Axes(
+            x_range=(-1, 9),
+            y_range=(-2, 8),
+            width=10,
+            height=5,
+        )
+        self.add(self.axes)
+
+    def coords_to_point(self, *coords):
+        return self.axes.coords_to_point(*coords)
+
+    def get_graph(self, function, **kwargs):
+        return self.axes.get_graph(function, **kwargs)
 
     def get_x_value(self,input_tracker):
         return input_tracker.get_value()
