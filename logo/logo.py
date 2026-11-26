@@ -1,6 +1,10 @@
-from manim.manimlib.constants import WHITE
-from manim.manimlib.mobject.geometry import DashedLine
+from manim.manimlib.animation.creation import DrawBorderThenFill, ShowCreation, Write
+from manim.manimlib.animation.growing import GrowFromCenter
+from manim.manimlib.constants import DOWN, LEFT, TAU, WHITE
+from manim.manimlib.mobject.geometry import DashedLine, Dot
 from manim.manimlib.mobject.geometry import RegularPolygon
+from manim.manimlib.mobject.svg.tex_mobject import Tex
+from manim.manimlib.mobject.value_tracker import ValueTracker
 from manimlib.imports import *
 
 NEW_BLUE = "#68a8e1"
@@ -23,17 +27,28 @@ class Thumbnail(GraphScene):
     def get_x_point(self, input_tracker):
         return self.coords_to_point(self.get_x_value(input_tracker), 0)
 
-    def get_y_point(self, input_tracker):
-        return self.coords_to_point(0, self.get_y_value(input_tracker, self.get_graph()))
+    def get_y_point(self, input_tracker, graph):
+        return self.coords_to_point(0, self.get_y_value(input_tracker, graph))
 
-    def get_graph_point(self, input_tracker):
-        return self.coords_to_point(self.get_x_value(input_tracker), self.get_y_value(input_tracker, self.get_graph()))
+    def get_graph_point(self, input_tracker, graph):
+        return self.coords_to_point(
+            self.get_x_value(input_tracker),
+            self.get_y_value(input_tracker, graph)
+        )
 
-    def get_v_line(self, input_tracker):
-        return DashedLine(self.get_x_point(input_tracker), self.get_graph_point(input_tracker), stroke_width=2)
+    def get_v_line(self, input_tracker, graph):
+        return DashedLine(
+            self.get_x_point(input_tracker), 
+            self.get_graph_point(input_tracker, graph), 
+            stroke_width=2
+        )
 
-    def get_h_line(self, input_tracker):
-        return DashedLine(self.get_graph_point(input_tracker), self.get_y_point(input_tracker), stroke_width=2)
+    def get_h_line(self, input_tracker, graph):
+        return DashedLine(
+            self.get_graph_point(input_tracker, graph), 
+            self.get_y_point(input_tracker, graph), 
+            stroke_width=2
+        )
 
     def create_marker_triangle(self, start_angle):
         triangle = RegularPolygon(n=3, start_angle=start_angle)
@@ -41,6 +56,47 @@ class Thumbnail(GraphScene):
         triangle.set_stroke(width=0)
         triangle.scale(0.1)
         return triangle
+
+    def create_graph_marker(self, input_tracker, graph, x_text, y_text):
+        x_label = Tex(x_text)
+        y_label = Tex(y_text)
+
+        input_triangle = self.create_marker_triangle(start_angle=TAU / 4)
+        output_triangle = self.create_marker_triangle(start_angle=0)
+
+        v_line = self.get_v_line(input_tracker, graph)
+        h_line = self.get_h_line(input_tracker, graph)
+
+        dot = Dot(color=WHITE)
+
+        x_label.next_to(v_line, DOWN)
+        y_label.next_to(h_line, LEFT)
+
+        input_triangle.next_to(v_line, DOWN, buff=0)
+        output_triangle.next_to(h_line, LEFT, buff=0)
+
+        dot.move_to(self.get_graph_point(input_tracker, graph))
+
+        return {
+            "x_label": x_label,
+            "y_label": y_label,
+            "input_triangle": input_triangle,
+            "output_triangle": output_triangle,
+            "v_line": v_line,
+            "h_line": h_line,
+            "dot": dot
+        }
+
+    def animate_marker(self, marker):
+        return [
+            DrawBorderThenFill(marker["input_triangle"]),
+            Write(marker["x_label"]),
+            ShowCreation(marker["v_line"]),
+            GrowFromCenter(marker["dot"]),
+            ShowCreation(marker["h_line"]),
+            Write(marker["y_label"]),
+            DrawBorderThenFill(marker["output_triangle"]),
+        ]
     
     def show_function_graph(self):
         self.setup_axes(animate=False)
@@ -56,70 +112,32 @@ class Thumbnail(GraphScene):
         input_tracker_p2 = ValueTracker(3.5)
 
         # 
-        input_triangle_p1 = self.create_marker_triangle(start_angle=TAU / 4)
-        output_triangle_p1 = self.create_marker_triangle(start_angle=0)
-        
+        marker_p1 = self.create_graph_marker(input_tracker_p1, graph, "a", "f(a)")
         # 
-        input_triangle_p2 = self.create_marker_triangle(start_angle=TAU / 4)
-        output_triangle_p2 = self.create_marker_triangle(start_angle=0)
-        
-        # 
-        x_label_p1 = Tex("a")
-        output_label_p1 = Tex("f(a)")
-        x_label_p2 = Tex("b")
-        output_label_p2 = Tex("f(b)")
-        v_line_p1 = self.get_v_line(input_tracker_p1)
-        v_line_p2 = self.get_v_line(input_tracker_p2)
-        h_line_p1 = self.get_h_line(input_tracker_p1)
-        h_line_p2 = self.get_h_line(input_tracker_p2)
-        graph_dot_p1 = Dot(color=WHITE)
-        graph_dot_p2 = Dot(color=WHITE)
-
-        # reposition mobjects
-        x_label_p1.next_to(v_line_p1, DOWN)
-        x_label_p2.next_to(v_line_p2, DOWN)
-        output_label_p1.next_to(h_line_p1, LEFT)
-        output_label_p2.next_to(h_line_p2, LEFT)
-        input_triangle_p1.next_to(v_line_p1, DOWN, buff=0)
-        input_triangle_p2.next_to(v_line_p2, DOWN, buff=0)
-        output_triangle_p1.next_to(h_line_p1, LEFT, buff=0)
-        output_triangle_p2.next_to(h_line_p2, LEFT, buff=0)
-        graph_dot_p1.move_to(self.get_graph_point(input_tracker_p1))
-        graph_dot_p2.move_to(self.get_graph_point(input_tracker_p2))
-
+        marker_p2 = self.create_graph_marker(input_tracker_p2, graph, "b", "f(b)")
 
         #
         self.play(
             ShowCreation(graph),
         )
         # Animacion del punto a
-        self.add_foreground_mobject(graph_dot_p1)
-        self.add_foreground_mobject(graph_dot_p2)
+        self.add_foreground_mobject(marker_p1["dot"])
+        self.add_foreground_mobject(marker_p2["dot"])
+
         self.play(
-            DrawBorderThenFill(input_triangle_p1),
-            Write(x_label_p1),
-            ShowCreation(v_line_p1),
-            GrowFromCenter(graph_dot_p1),
-            ShowCreation(h_line_p1),
-            Write(output_label_p1),
-            DrawBorderThenFill(output_triangle_p1),
-            DrawBorderThenFill(input_triangle_p2),
-            Write(x_label_p2),
-            ShowCreation(v_line_p2),
-            GrowFromCenter(graph_dot_p2),
-            ShowCreation(h_line_p2),
-            Write(output_label_p2),
-            DrawBorderThenFill(output_triangle_p2),
+            *self.animate_marker(marker_p1),
+            *self.animate_marker(marker_p2),
             run_time=0.5
         )
+
         self.add(
-            input_triangle_p2,
-            x_label_p2,
-            graph_dot_p2,
-            v_line_p2,
-            h_line_p2,
-            output_triangle_p2,
-            output_label_p2,
+            marker_p2["input_triangle"],
+            marker_p2["x_label"],
+            marker_p2["dot"],
+            marker_p2["v_line"],
+            marker_p2["h_line"],
+            marker_p2["output_triangle"],
+            marker_p2["y_label"],
         )
         ###################
         pendiente_recta = self.get_secant_slope_group(
@@ -140,11 +158,11 @@ class Thumbnail(GraphScene):
 
 
         self.add(
-            input_triangle_p2,
-            graph_dot_p2,
-            v_line_p2,
-            h_line_p2,
-            output_triangle_p2,
+            marker_p2["input_triangle"],
+            marker_p2["dot"],
+            marker_p2["v_line"],
+            marker_p2["h_line"],
+            marker_p2["output_triangle"],
         )
         self.play(FadeIn(grupo_secante))
 
