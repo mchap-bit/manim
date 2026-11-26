@@ -1,3 +1,6 @@
+from manim.manimlib.constants import WHITE
+from manim.manimlib.mobject.geometry import DashedLine
+from manim.manimlib.mobject.geometry import RegularPolygon
 from manimlib.imports import *
 
 NEW_BLUE = "#68a8e1"
@@ -11,6 +14,34 @@ class Thumbnail(GraphScene):
     def construct(self):
         self.show_function_graph()
 
+    def get_x_value(self,input_tracker):
+        return input_tracker.get_value()
+
+    def get_y_value(self, input_tracker, graph):
+        return graph.underlying_function(self.get_x_value(input_tracker))
+
+    def get_x_point(self, input_tracker):
+        return self.coords_to_point(self.get_x_value(input_tracker), 0)
+
+    def get_y_point(self, input_tracker):
+        return self.coords_to_point(0, self.get_y_value(input_tracker, self.get_graph()))
+
+    def get_graph_point(self, input_tracker):
+        return self.coords_to_point(self.get_x_value(input_tracker), self.get_y_value(input_tracker, self.get_graph()))
+
+    def get_v_line(self, input_tracker):
+        return DashedLine(self.get_x_point(input_tracker), self.get_graph_point(input_tracker), stroke_width=2)
+
+    def get_h_line(self, input_tracker):
+        return DashedLine(self.get_graph_point(input_tracker), self.get_y_point(input_tracker), stroke_width=2)
+
+    def create_marker_triangle(self, start_angle):
+        triangle = RegularPolygon(n=3, start_angle=start_angle)
+        triangle.set_fill(WHITE, 1)
+        triangle.set_stroke(width=0)
+        triangle.scale(0.1)
+        return triangle
+    
     def show_function_graph(self):
         self.setup_axes(animate=False)
         def func(x):
@@ -24,50 +55,23 @@ class Thumbnail(GraphScene):
         input_tracker_p1 = ValueTracker(1.5)
         input_tracker_p2 = ValueTracker(3.5)
 
-        def get_x_value(input_tracker):
-            return input_tracker.get_value()
-
-        def get_y_value(input_tracker):
-            return graph.underlying_function(get_x_value(input_tracker))
-
-        def get_x_point(input_tracker):
-            return self.coords_to_point(get_x_value(input_tracker), 0)
-
-        def get_y_point(input_tracker):
-            return self.coords_to_point(0, get_y_value(input_tracker))
-
-        def get_graph_point(input_tracker):
-            return self.coords_to_point(get_x_value(input_tracker), get_y_value(input_tracker))
-
-        def get_v_line(input_tracker):
-            return DashedLine(get_x_point(input_tracker), get_graph_point(input_tracker), stroke_width=2)
-
-        def get_h_line(input_tracker):
-            return DashedLine(get_graph_point(input_tracker), get_y_point(input_tracker), stroke_width=2)
         # 
-        input_triangle_p1 = RegularPolygon(n=3, start_angle=TAU / 4)
-        output_triangle_p1 = RegularPolygon(n=3, start_angle=0)
-        for triangle in input_triangle_p1, output_triangle_p1:
-            triangle.set_fill(WHITE, 1)
-            triangle.set_stroke(width=0)
-            triangle.scale(0.1)
+        input_triangle_p1 = self.create_marker_triangle(start_angle=TAU / 4)
+        output_triangle_p1 = self.create_marker_triangle(start_angle=0)
+        
         # 
-        input_triangle_p2 = RegularPolygon(n=3, start_angle=TAU / 4)
-        output_triangle_p2 = RegularPolygon(n=3, start_angle=0)
-        for triangle in input_triangle_p2, output_triangle_p2:
-            triangle.set_fill(WHITE, 1)
-            triangle.set_stroke(width=0)
-            triangle.scale(0.1)
+        input_triangle_p2 = self.create_marker_triangle(start_angle=TAU / 4)
+        output_triangle_p2 = self.create_marker_triangle(start_angle=0)
         
         # 
         x_label_p1 = Tex("a")
         output_label_p1 = Tex("f(a)")
         x_label_p2 = Tex("b")
         output_label_p2 = Tex("f(b)")
-        v_line_p1 = get_v_line(input_tracker_p1)
-        v_line_p2 = get_v_line(input_tracker_p2)
-        h_line_p1 = get_h_line(input_tracker_p1)
-        h_line_p2 = get_h_line(input_tracker_p2)
+        v_line_p1 = self.get_v_line(input_tracker_p1)
+        v_line_p2 = self.get_v_line(input_tracker_p2)
+        h_line_p1 = self.get_h_line(input_tracker_p1)
+        h_line_p2 = self.get_h_line(input_tracker_p2)
         graph_dot_p1 = Dot(color=WHITE)
         graph_dot_p2 = Dot(color=WHITE)
 
@@ -80,8 +84,8 @@ class Thumbnail(GraphScene):
         input_triangle_p2.next_to(v_line_p2, DOWN, buff=0)
         output_triangle_p1.next_to(h_line_p1, LEFT, buff=0)
         output_triangle_p2.next_to(h_line_p2, LEFT, buff=0)
-        graph_dot_p1.move_to(get_graph_point(input_tracker_p1))
-        graph_dot_p2.move_to(get_graph_point(input_tracker_p2))
+        graph_dot_p1.move_to(self.get_graph_point(input_tracker_p1))
+        graph_dot_p2.move_to(self.get_graph_point(input_tracker_p2))
 
 
         #
